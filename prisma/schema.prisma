@@ -1,0 +1,285 @@
+generator client {
+  provider = "prisma-client-js"
+}
+
+datasource db {
+  provider = "postgresql"
+  url      = env("DATABASE_URL")
+}
+
+// ─── Enums ──────────────────────────────────────────
+
+enum UserRole {
+  USER
+  ADMIN
+}
+
+enum TeamMemberRole {
+  OWNER
+  CAPTAIN
+  MEMBER
+}
+
+enum TeamMemberStatus {
+  PENDING
+  ACCEPTED
+  DECLINED
+}
+
+enum TournamentType {
+  TEAM
+  SOLO
+  RANDOMISED
+}
+
+enum TournamentStatus {
+  DRAFT
+  REGISTRATION_OPEN
+  REGISTRATION_CLOSED
+  IN_PROGRESS
+  COMPLETED
+  CANCELLED
+}
+
+enum RegistrationStatus {
+  REGISTERED
+  CHECKED_IN
+  WITHDRAWN
+}
+
+enum RoundStatus {
+  PENDING
+  IN_PROGRESS
+  COMPLETED
+}
+
+enum LobbyStatus {
+  PENDING
+  IN_PROGRESS
+  AWAITING_RESULTS
+  RESULTS_CONFIRMED
+  DISPUTED
+}
+
+enum ScoreDisputeStatus {
+  OPEN
+  RESOLVED
+  DISMISSED
+}
+
+// ─── Models ─────────────────────────────────────────
+
+model User {
+  id           String   @id @default(cuid())
+  email        String   @unique
+  username     String   @unique
+  passwordHash String
+  displayName  String?
+  avatarUrl    String?
+  role         UserRole @default(USER)
+  createdAt    DateTime @default(now())
+  updatedAt    DateTime @updatedAt
+
+  teamMemberships          TeamMember[]
+  createdTournaments       Tournament[]
+  tournamentRegistrations  TournamentRegistration[]
+  scoreReports             ScoreReport[]
+  disputesRaised           ScoreDispute[]           @relation("DisputeRaisedBy")
+  disputesResolved         ScoreDispute[]           @relation("DisputeResolvedBy")
+
+  @@index([email])
+  @@index([username])
+}
+
+model Team {
+  id          String   @id @default(cuid())
+  name        String   @unique
+  tag         String   @unique
+  description String?
+  logoUrl     String?
+  createdAt   DateTime @default(now())
+  updatedAt   DateTime @updatedAt
+
+  members                 TeamMember[]
+  tournamentRegistrations TournamentRegistration[]
+  lobbyTeams              LobbyTeam[]
+  scoreReports            ScoreReport[]
+
+  @@index([name])
+}
+
+model TeamMember {
+  id       String           @id @default(cuid())
+  teamId   String
+  userId   String
+  role     TeamMemberRole   @default(MEMBER)
+  status   TeamMemberStatus @default(PENDING)
+  joinedAt DateTime         @default(now())
+
+  team Team @relation(fields: [teamId], references: [id], onDelete: Cascade)
+  user User @relation(fields: [userId], references: [id], onDelete: Cascade)
+
+  @@unique([teamId, userId])
+  @@index([teamId])
+  @@index([userId])
+  @@index([status])
+  @@index([teamId, status])
+}
+
+model Tournament {
+  id                    String           @id @default(cuid())
+  name                  String
+  description           String?
+  game                  String?
+  bannerImageUrl        String?
+  type                  TournamentType
+  status                TournamentStatus @default(DRAFT)
+  maxTeams              Int?
+  minTeamSize           Int?
+  maxTeamSize           Int?
+  teamsPerLobby         Int              @default(4)
+  advancersPerLobby     Int              @default(2)
+  registrationOpenDate  DateTime?
+  registrationCloseDate DateTime?
+  startDate             DateTime?
+  rules                 String?
+  prizeDescription      String?
+  createdById           String
+  createdAt             DateTime         @default(now())
+  updatedAt             DateTime         @updatedAt
+
+  createdBy     User                     @relation(fields: [createdById], references: [id])
+  registrations TournamentRegistration[]
+  rounds        TournamentRound[]
+  lobbies       Lobby[]
+
+  @@index([status])
+  @@index([type])
+  @@index([startDate])
+  @@index([createdById])
+}
+
+model TournamentRegistration {
+  id           String             @id @default(cuid())
+  tournamentId String
+  teamId       String?
+  userId       String?
+  seed         Int?
+  status       RegistrationStatus @default(REGISTERED)
+  registeredAt DateTime           @default(now())
+
+  tournament Tournament @relation(fields: [tournamentId], references: [id], onDelete: Cascade)
+  team       Team?      @relation(fields: [teamId], references: [id], onDelete: Cascade)
+  user       User?      @relation(fields: [userId], references: [id], onDelete: Cascade)
+
+  @@unique([tournamentId, teamId])
+  @@unique([tournamentId, userId])
+  @@index([tournamentId])
+  @@index([teamId])
+  @@index([userId])
+}
+
+model TournamentRound {
+  id           String      @id @default(cuid())
+  tournamentId String
+  roundNumber  Int
+  name         String
+  status       RoundStatus @default(PENDING)
+
+  tournament Tournament @relation(fields: [tournamentId], references: [id], onDelete: Cascade)
+  lobbies    Lobby[]
+
+  @@unique([tournamentId, roundNumber])
+  @@index([tournamentId])
+}
+
+model Lobby {
+  id           String      @id @default(cuid())
+  roundId      String
+  tournamentId String
+  lobbyNumber  Int
+  status       LobbyStatus @default(PENDING)
+  scheduledAt  DateTime?
+
+  round        TournamentRound @relation(fields: [roundId], references: [id], onDelete: Cascade)
+  tournament   Tournament      @relation(fields: [tournamentId], references: [id], onDelete: Cascade)
+  lobbyTeams   LobbyTeam[]
+  scoreReports ScoreReport[]
+  disputes     ScoreDispute[]
+
+  @@unique([roundId, lobbyNumber])
+  @@index([roundId])
+  @@index([tournamentId])
+  @@index([status])
+}
+
+model LobbyTeam {
+  id         String  @id @default(cuid())
+  lobbyId    String
+  teamId     String
+  seed       Int?
+  placement  Int?
+  isAdvancer Boolean @default(false)
+  isBye      Boolean @default(false)
+
+  lobby        Lobby              @relation(fields: [lobbyId], references: [id], onDelete: Cascade)
+  team         Team               @relation(fields: [teamId], references: [id], onDelete: Cascade)
+  scoreEntries ScoreReportEntry[]
+
+  @@unique([lobbyId, teamId])
+  @@index([lobbyId])
+  @@index([teamId])
+  @@index([isAdvancer])
+}
+
+model ScoreReport {
+  id              String   @id @default(cuid())
+  lobbyId         String
+  reporterId      String
+  reportedByTeamId String?
+  isConfirmed     Boolean  @default(false)
+  createdAt       DateTime @default(now())
+
+  lobby    Lobby              @relation(fields: [lobbyId], references: [id], onDelete: Cascade)
+  reporter User               @relation(fields: [reporterId], references: [id])
+  team     Team?              @relation(fields: [reportedByTeamId], references: [id])
+  entries  ScoreReportEntry[]
+
+  @@index([lobbyId])
+  @@index([reporterId])
+  @@index([lobbyId, isConfirmed])
+}
+
+model ScoreReportEntry {
+  id            String @id @default(cuid())
+  scoreReportId String
+  lobbyTeamId   String
+  placement     Int
+
+  scoreReport ScoreReport @relation(fields: [scoreReportId], references: [id], onDelete: Cascade)
+  lobbyTeam   LobbyTeam   @relation(fields: [lobbyTeamId], references: [id], onDelete: Cascade)
+
+  @@unique([scoreReportId, lobbyTeamId])
+  @@index([scoreReportId])
+  @@index([lobbyTeamId])
+}
+
+model ScoreDispute {
+  id           String             @id @default(cuid())
+  lobbyId      String
+  reason       String
+  status       ScoreDisputeStatus @default(OPEN)
+  raisedById   String
+  resolvedById String?
+  resolution   String?
+  createdAt    DateTime           @default(now())
+  resolvedAt   DateTime?
+
+  lobby      Lobby @relation(fields: [lobbyId], references: [id], onDelete: Cascade)
+  raisedBy   User  @relation("DisputeRaisedBy", fields: [raisedById], references: [id])
+  resolvedBy User? @relation("DisputeResolvedBy", fields: [resolvedById], references: [id])
+
+  @@index([lobbyId])
+  @@index([status])
+  @@index([raisedById])
+}
