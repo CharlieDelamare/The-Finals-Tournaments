@@ -20,12 +20,16 @@ export function Navbar() {
   const isAdmin = user?.role === "ADMIN";
 
   return (
-    <nav className="sticky top-0 z-50 border-b border-border bg-background/95 backdrop-blur supports-[backdrop-filter]:bg-background/60">
+    <nav className="sticky top-0 z-50 border-b border-white/10 bg-black/90 backdrop-blur-xl">
       <div className="mx-auto flex h-16 max-w-7xl items-center justify-between px-4 sm:px-6 lg:px-8">
         <div className="flex items-center gap-8">
-          <Link href="/" className="flex items-center gap-2">
-            <span className="text-xl font-bold text-primary">TFT</span>
-            <span className="hidden text-sm font-medium text-foreground sm:block">
+          <Link href="/" className="flex items-center gap-3">
+            <div className="flex h-8 w-8 items-center justify-center bg-finals-gold skew-x-[-6deg]">
+              <span className="skew-x-[6deg] font-display text-lg font-extrabold italic text-black">
+                TF
+              </span>
+            </div>
+            <span className="hidden font-display text-base font-bold uppercase italic tracking-wider text-white sm:block">
               The Finals Tournaments
             </span>
           </Link>
@@ -34,26 +38,26 @@ export function Navbar() {
             <div className="hidden items-center gap-6 md:flex">
               <Link
                 href="/tournaments"
-                className="text-sm font-medium text-muted-foreground transition-colors hover:text-foreground"
+                className="font-display text-sm font-semibold uppercase italic tracking-wider text-white/50 transition-colors hover:text-finals-gold"
               >
                 Tournaments
               </Link>
               <Link
                 href="/teams"
-                className="text-sm font-medium text-muted-foreground transition-colors hover:text-foreground"
+                className="font-display text-sm font-semibold uppercase italic tracking-wider text-white/50 transition-colors hover:text-finals-gold"
               >
                 Teams
               </Link>
               <Link
                 href="/dashboard"
-                className="text-sm font-medium text-muted-foreground transition-colors hover:text-foreground"
+                className="font-display text-sm font-semibold uppercase italic tracking-wider text-white/50 transition-colors hover:text-finals-gold"
               >
                 Dashboard
               </Link>
               {isAdmin && (
                 <Link
                   href="/admin"
-                  className="text-sm font-medium text-primary transition-colors hover:text-primary/80"
+                  className="font-display text-sm font-semibold uppercase italic tracking-wider text-finals-gold transition-colors hover:text-finals-gold/80"
                 >
                   Admin
                 </Link>
@@ -69,25 +73,28 @@ export function Navbar() {
                 <DropdownMenuTrigger asChild>
                   <Button
                     variant="ghost"
-                    className="relative h-9 w-9 rounded-full"
+                    className="relative h-9 w-9 rounded-none border border-white/10 hover:border-finals-gold/50 hover:bg-white/5"
                   >
-                    <Avatar className="h-9 w-9">
-                      <AvatarFallback className="bg-primary/20 text-primary">
+                    <Avatar className="h-9 w-9 rounded-none">
+                      <AvatarFallback className="rounded-none bg-finals-gold/20 font-display text-sm font-bold italic text-finals-gold">
                         {user.username?.[0]?.toUpperCase() || "U"}
                       </AvatarFallback>
                     </Avatar>
                   </Button>
                 </DropdownMenuTrigger>
-                <DropdownMenuContent align="end" className="w-56">
+                <DropdownMenuContent
+                  align="end"
+                  className="w-56 rounded-none border-white/10 bg-black"
+                >
                   <div className="flex items-center gap-2 p-2">
                     <div className="flex flex-col space-y-1 leading-none">
-                      <p className="font-medium">{user.name}</p>
-                      <p className="text-sm text-muted-foreground">
-                        {user.email}
+                      <p className="font-display text-sm font-bold italic text-white">
+                        {user.name}
                       </p>
+                      <p className="text-xs text-white/40">{user.email}</p>
                     </div>
                   </div>
-                  <DropdownMenuSeparator />
+                  <DropdownMenuSeparator className="bg-white/10" />
                   <DropdownMenuItem asChild>
                     <Link href="/dashboard">Dashboard</Link>
                   </DropdownMenuItem>
@@ -102,9 +109,10 @@ export function Navbar() {
                       <Link href="/admin">Admin Panel</Link>
                     </DropdownMenuItem>
                   )}
-                  <DropdownMenuSeparator />
+                  <DropdownMenuSeparator className="bg-white/10" />
                   <DropdownMenuItem
                     onClick={() => signOut({ callbackUrl: "/login" })}
+                    className="text-finals-red focus:text-finals-red"
                   >
                     Sign out
                   </DropdownMenuItem>
@@ -115,11 +123,11 @@ export function Navbar() {
               <Button
                 variant="ghost"
                 size="icon"
-                className="md:hidden"
+                className="border border-white/10 hover:border-finals-gold/50 hover:bg-white/5 md:hidden"
                 onClick={() => setMobileOpen(!mobileOpen)}
               >
                 <svg
-                  className="h-5 w-5"
+                  className="h-5 w-5 text-white"
                   fill="none"
                   viewBox="0 0 24 24"
                   stroke="currentColor"
@@ -143,13 +151,19 @@ export function Navbar() {
               </Button>
             </>
           ) : (
-            <div className="flex items-center gap-2">
-              <Button variant="ghost" asChild>
-                <Link href="/login">Sign in</Link>
-              </Button>
-              <Button asChild>
-                <Link href="/register">Sign up</Link>
-              </Button>
+            <div className="flex items-center gap-3">
+              <Link
+                href="/login"
+                className="font-display text-sm font-semibold uppercase italic tracking-wider text-white/70 transition-colors hover:text-finals-gold"
+              >
+                Sign in
+              </Link>
+              <Link
+                href="/register"
+                className="btn-glow-red inline-flex items-center bg-finals-red px-5 py-2 font-display text-sm font-bold uppercase italic tracking-wider text-white transition-all hover:bg-finals-red-glow skew-x-[-6deg]"
+              >
+                <span className="skew-x-[6deg]">Play Now</span>
+              </Link>
             </div>
           )}
         </div>
@@ -157,38 +171,25 @@ export function Navbar() {
 
       {/* Mobile nav */}
       {mobileOpen && user && (
-        <div className="border-t border-border px-4 pb-4 pt-2 md:hidden">
-          <div className="flex flex-col gap-2">
-            <Link
-              href="/tournaments"
-              className="rounded-md px-3 py-2 text-sm font-medium text-muted-foreground hover:bg-muted hover:text-foreground"
-              onClick={() => setMobileOpen(false)}
-            >
-              Tournaments
-            </Link>
-            <Link
-              href="/teams"
-              className="rounded-md px-3 py-2 text-sm font-medium text-muted-foreground hover:bg-muted hover:text-foreground"
-              onClick={() => setMobileOpen(false)}
-            >
-              Teams
-            </Link>
-            <Link
-              href="/dashboard"
-              className="rounded-md px-3 py-2 text-sm font-medium text-muted-foreground hover:bg-muted hover:text-foreground"
-              onClick={() => setMobileOpen(false)}
-            >
-              Dashboard
-            </Link>
-            {isAdmin && (
+        <div className="border-t border-white/10 bg-black/95 px-4 pb-4 pt-2 backdrop-blur-xl md:hidden">
+          <div className="flex flex-col gap-1">
+            {[
+              { href: "/tournaments", label: "Tournaments" },
+              { href: "/teams", label: "Teams" },
+              { href: "/dashboard", label: "Dashboard" },
+              ...(isAdmin
+                ? [{ href: "/admin", label: "Admin" }]
+                : []),
+            ].map((item) => (
               <Link
-                href="/admin"
-                className="rounded-md px-3 py-2 text-sm font-medium text-primary hover:bg-muted"
+                key={item.href}
+                href={item.href}
+                className="border-l-2 border-transparent px-4 py-2.5 font-display text-sm font-semibold uppercase italic tracking-wider text-white/50 transition-all hover:border-finals-gold hover:bg-white/5 hover:text-finals-gold"
                 onClick={() => setMobileOpen(false)}
               >
-                Admin
+                {item.label}
               </Link>
-            )}
+            ))}
           </div>
         </div>
       )}
