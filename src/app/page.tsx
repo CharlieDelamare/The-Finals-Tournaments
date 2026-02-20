@@ -12,10 +12,13 @@ import {
 import { Badge } from "@/components/ui/badge";
 
 export default async function HomePage() {
-  const session = await auth();
-
-  if (session?.user) {
-    redirect("/dashboard");
+  try {
+    const session = await auth();
+    if (session?.user) {
+      redirect("/dashboard");
+    }
+  } catch {
+    // Auth may fail if database is unavailable — continue rendering landing page
   }
 
   const featuredTournaments = await prisma.tournament.findMany({
@@ -27,7 +30,7 @@ export default async function HomePage() {
     },
     orderBy: { createdAt: "desc" },
     take: 3,
-  });
+  }).catch(() => []);
 
   return (
     <div className="flex min-h-screen flex-col">
